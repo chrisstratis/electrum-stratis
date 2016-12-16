@@ -6,6 +6,7 @@ build/
 contrib/pyinstaller/
 dist/
 Electrum-Stratis.egg-info/
+Electrum_Stratis.egg-info/
 env/
 locale/
 packages

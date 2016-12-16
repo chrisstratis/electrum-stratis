@@ -5,9 +5,9 @@ Electrum-Stratis - Lightweight Stratis client
 
   Licence: MIT Licence
   Original Author: Thomas Voegtlin
-  Port Maintainer: Pooler
+  Port Maintainer: ddev0tion
   Language: Python
-  Homepage: https://electrum-stratis.org/
+  Homepage: https://www.stratisplatform.com
 
 
 
@@ -47,7 +47,7 @@ Development version
 
 Check out the code from Github::
 
-    git clone git://github.com/pooler/electrum-stratis.git
+    git clone git://github.com/dev0tion/electrum-stratis
     cd electrum-stratis
 
 Run install (this should install dependencies)::
