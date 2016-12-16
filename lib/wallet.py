@@ -47,14 +47,14 @@ from collections import namedtuple, defaultdict
 from i18n import _
 from util import NotEnoughFunds, PrintError, UserCancelled, profiler
 
-from bitcoin import *
+from stratis import *
 from version import *
 from keystore import load_keystore, Hardware_KeyStore
 from storage import multisig_type
 
 from transaction import Transaction
 from plugins import run_hook
-import bitcoin
+import stratis
 import coinchooser
 from synchronizer import Synchronizer
 from verifier import SPV
@@ -98,7 +98,6 @@ class Abstract_Wallet(PrintError):
         self.frozen_addresses      = set(storage.get('frozen_addresses',[]))
         self.stored_height         = storage.get('stored_height', 0)       # last known height (for offline mode)
         self.history               = storage.get('addr_history',{})        # address -> list(txid, height)
-
         self.load_keystore()
         self.load_addresses()
         self.load_transactions()
@@ -510,7 +509,7 @@ class Abstract_Wallet(PrintError):
         received, sent = self.get_addr_io(address)
         return sum([v for height, v, is_cb in received.values()])
 
-    # return the balance of a bitcoin address: confirmed and matured, unconfirmed, unmatured
+    # return the balance of a stratis address: confirmed and matured, unconfirmed, unmatured
     def get_addr_balance(self, address):
         received, sent = self.get_addr_io(address)
         c = u = x = 0
@@ -768,7 +767,7 @@ class Abstract_Wallet(PrintError):
         if b and self.network and self.network.dynfee(i):
             return self.network.dynfee(i)
         else:
-            return config.get('fee_per_kb', bitcoin.RECOMMENDED_FEE)
+            return config.get('fee_per_kb', stratis.RECOMMENDED_FEE)
 
     def get_tx_status(self, tx_hash, height, conf, timestamp):
         from util import format_time
@@ -801,14 +800,14 @@ class Abstract_Wallet(PrintError):
         return status, status_str
 
     def relayfee(self):
-        RELAY_FEE = bitcoin.MIN_RELAY_TX_FEE
-        MAX_RELAY_FEE = 10 * RELAY_FEE
+        RELAY_FEE = 5000
+        MAX_RELAY_FEE = 50000
         f = self.network.relay_fee if self.network and self.network.relay_fee else RELAY_FEE
         return min(f, MAX_RELAY_FEE)
 
     def dust_threshold(self):
         # Change <= dust threshold is added to the tx fee
-        return DUST_SOFT_LIMIT
+        return 182 * 3 * self.relayfee() / 1000
 
     def get_tx_fee(self, tx):
         # this method can be overloaded
@@ -819,7 +818,7 @@ class Abstract_Wallet(PrintError):
         for type, data, value in outputs:
             if type == TYPE_ADDRESS:
                 if not is_address(data):
-                    raise BaseException("Invalid litecoin address:" + data)
+                    raise BaseException("Invalid stratis address:" + data)
 
         # Avoid index-out-of-range with coins[0] below
         if not coins:
@@ -846,7 +845,7 @@ class Abstract_Wallet(PrintError):
 
         # Fee estimator
         if fixed_fee is None:
-            fee_estimator = partial(self.estimate_fee, config, outputs=outputs)
+            fee_estimator = partial(self.estimate_fee, config)
         else:
             fee_estimator = lambda size: fixed_fee
 
@@ -862,11 +861,8 @@ class Abstract_Wallet(PrintError):
         run_hook('make_unsigned_transaction', self, tx)
         return tx
 
-    def estimate_fee(self, config, size, outputs=[]):
+    def estimate_fee(self, config, size):
         fee = int(self.fee_per_kb(config) * size / 1000.)
-        for _, _, value in outputs:
-            if value < DUST_SOFT_LIMIT:
-                fee += DUST_SOFT_LIMIT
         return fee
 
     def mktx(self, outputs, password, config, fee=None, change_addr=None, domain=None):
@@ -1142,7 +1138,7 @@ class Abstract_Wallet(PrintError):
         if not r:
             return
         out = copy.copy(r)
-        out['URI'] = 'litecoin:' + addr + '?amount=' + util.format_satoshis(out.get('amount'))
+        out['URI'] = 'stratis:' + addr + '?amount=' + util.format_satoshis(out.get('amount'))
         status, conf = self.get_request_status(addr)
         out['status'] = status
         if conf is not None:

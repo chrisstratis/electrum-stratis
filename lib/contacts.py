@@ -25,7 +25,7 @@ import sys
 import re
 import dns
 
-import bitcoin
+import stratis
 import dnssec
 from util import StoreDict, print_error
 from i18n import _
@@ -38,13 +38,13 @@ class Contacts(StoreDict):
         # backward compatibility
         for k, v in self.items():
             _type, n = v
-            if _type == 'address' and bitcoin.is_address(n):
+            if _type == 'address' and stratis.is_address(n):
                 self.pop(k)
                 self[n] = ('address', k)
 
 
     def resolve(self, k):
-        if bitcoin.is_address(k):
+        if stratis.is_address(k):
             return {
                 'address': k,
                 'type': 'address'
@@ -65,13 +65,13 @@ class Contacts(StoreDict):
                 'type': 'openalias',
                 'validated': validated
             }
-        raise Exception("Invalid Litecoin address or alias", k)
+        raise Exception("Invalid Stratis address or alias", k)
 
     def resolve_openalias(self, url):
         # support email-style addresses, per the OA standard
         url = url.replace('@', '.')
         records, validated = dnssec.query(url, dns.rdatatype.TXT)
-        prefix = 'ltc'
+        prefix = 'strat'
         for record in records:
             string = record.strings[0]
             if string.startswith('oa1:' + prefix):

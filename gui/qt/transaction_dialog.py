@@ -32,10 +32,10 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 import PyQt4.QtCore as QtCore
 
-from electrum_ltc import transaction
-from electrum_ltc.bitcoin import base_encode
-from electrum_ltc.i18n import _
-from electrum_ltc.plugins import run_hook
+from electrum_stratis import transaction
+from electrum_stratis.stratis import base_encode
+from electrum_stratis.i18n import _
+from electrum_stratis.plugins import run_hook
 
 from util import *
 
@@ -204,6 +204,9 @@ class TxDialog(QDialog, MessageBoxMixin):
         else:
             amount_str = _("Amount sent:") + ' %s'% format_amount(-amount) + ' ' + base_unit
         fee_str = _("Transaction fee") + ': %s'% (format_amount(fee) + ' ' + base_unit if fee is not None else _('unknown'))
+        if fee is not None:
+            size = self.tx.estimated_size()
+            fee_str += '   ( %d bytes @ %s ' % (size, format_amount(fee * 1000 / size)) + base_unit + '/kB, %.0d sat/byte )' % (fee/size)
         self.amount_label.setText(amount_str)
         self.fee_label.setText(fee_str)
         run_hook('transaction_dialog_update', self)

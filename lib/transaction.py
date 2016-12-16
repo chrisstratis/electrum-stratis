@@ -28,8 +28,8 @@
 # Note: The deserialization code originally comes from ABE.
 
 
-import bitcoin
-from bitcoin import *
+import stratis
+from stratis import *
 from util import print_error, profiler
 import time
 import sys
@@ -359,7 +359,7 @@ def parse_scriptSig(d, bytes):
     d['x_pubkeys'] = x_pubkeys
     d['pubkeys'] = pubkeys
     d['redeemScript'] = redeemScript
-    d['address'] = hash_160_to_bc_address(hash_160(redeemScript.decode('hex')), 5)
+    d['address'] = hash_160_to_bc_address(hash_160(redeemScript.decode('hex')),125)
 
 
 
@@ -382,7 +382,7 @@ def get_address_from_output_script(bytes):
     # p2sh
     match = [ opcodes.OP_HASH160, opcodes.OP_PUSHDATA4, opcodes.OP_EQUAL ]
     if match_decoded(decoded, match):
-        return TYPE_ADDRESS, hash_160_to_bc_address(decoded[1][1],5)
+        return TYPE_ADDRESS, hash_160_to_bc_address(decoded[1][1],125)
 
     return TYPE_SCRIPT, bytes
 
@@ -517,11 +517,15 @@ class Transaction:
         return d
 
     @classmethod
-    def from_io(klass, inputs, outputs, locktime=0):
+    def from_io(klass, inputs, outputs, locktime=0, nTime=0):
         self = klass(None)
         self._inputs = inputs
         self._outputs = outputs
         self.locktime = locktime
+        if nTime == 0:
+            self.time = int(time.time()) # bitspill
+        else:
+            self.time = nTime
         return self
 
     @classmethod
@@ -540,11 +544,11 @@ class Transaction:
             return addr.encode('hex')
         elif output_type == TYPE_ADDRESS:
             addrtype, hash_160 = bc_address_to_hash_160(addr)
-            if addrtype == 48:
+            if addrtype == 63:
                 script = '76a9'                                      # op_dup, op_hash_160
                 script += push_script(hash_160.encode('hex'))
                 script += '88ac'                                     # op_equalverify, op_checksig
-            elif addrtype == 5:
+            elif addrtype == 125:
                 script = 'a9'                                        # op_hash_160
                 script += push_script(hash_160.encode('hex'))
                 script += '87'                                       # op_equal
@@ -625,7 +629,9 @@ class Transaction:
     def serialize(self, for_sig=None):
         inputs = self.inputs()
         outputs = self.outputs()
+        time = self.time # bitspill
         s = int_to_hex(1, 4)                                         # version
+        s += int_to_hex(time,4) # bitspill    
         s += var_int(len(inputs))                                    # number of inputs
         for i, txin in enumerate(inputs):
             s += self.serialize_input(txin, i, for_sig)
@@ -670,7 +676,7 @@ class Transaction:
     @profiler
     def estimated_size(self):
         '''Return an estimated tx size in bytes.'''
-        return len(self.serialize(-1)) / 2  # ASCII hex string
+        return len(self.serialize(-1)) / 2 if not self.is_complete() or self.raw is None else len(self.raw) / 2 # ASCII hex string
 
     @classmethod
     def estimated_input_size(self, txin):
@@ -723,7 +729,7 @@ class Transaction:
                     for_sig = Hash(self.tx_for_sig(i).decode('hex'))
                     pkey = regenerate_key(sec)
                     secexp = pkey.secret
-                    private_key = bitcoin.MySigningKey.from_secret_exponent( secexp, curve = SECP256k1 )
+                    private_key = stratis.MySigningKey.from_secret_exponent( secexp, curve = SECP256k1 )
                     public_key = private_key.get_verifying_key()
                     sig = private_key.sign_digest_deterministic( for_sig, hashfunc=hashlib.sha256, sigencode = ecdsa.util.sigencode_der )
                     assert public_key.verify_digest( sig, for_sig, sigdecode = ecdsa.util.sigdecode_der)
@@ -765,14 +771,19 @@ class Transaction:
         return out
 
 
-    def required_fee(self, wallet):
+    def requires_fee(self, wallet):
         # see https://en.bitcoin.it/wiki/Transaction_fees
+        #
+        # size must be smaller than 1 kbyte for free tx
         size = len(self.serialize(-1))/2
-        fee = 0
+        if size >= 10000:
+            return True
+        # all outputs must be 0.01 BTC or larger for free tx
         for addr, value in self.get_outputs():
-            if value < DUST_SOFT_LIMIT:
-                fee += DUST_SOFT_LIMIT
-        threshold = 57600000*4
+            if value < 1000000:
+                return True
+        # priority must be large enough for free tx
+        threshold = 57600000
         weight = 0
         for txin in self.inputs():
             height, conf, timestamp = wallet.get_tx_height(txin["prevout_hash"])
@@ -780,11 +791,7 @@ class Transaction:
         priority = weight / size
         print_error(priority, threshold)
 
-        if size < 5000 and fee == 0 and priority > threshold:
-            return 0
-        fee += (1 + size / 1000) * MIN_RELAY_TX_FEE
-        print_error(fee)
-        return fee
+        return priority < threshold
 
 
 

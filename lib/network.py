@@ -37,7 +37,7 @@ import socket
 import json
 
 import util
-from bitcoin import *
+from stratis import *
 from interface import Connection, Interface
 from blockchain import Blockchain
 from version import ELECTRUM_VERSION, PROTOCOL_VERSION
@@ -47,17 +47,7 @@ FEE_TARGETS = [25, 10, 5, 2]
 DEFAULT_PORTS = {'t':'50001', 's':'50002', 'h':'8081', 'g':'8082'}
 
 DEFAULT_SERVERS = {
-    'einfachmalnettsein.de': {'t':'40001', 's':'40002'},
-    'electrum.cryptomachine.com': DEFAULT_PORTS,
-    'electrum-ltc.alexcos.ro': {'t':'50003', 's':'50004'},
-    'electrum-ltc.bysh.me': DEFAULT_PORTS,
-    'electrum-ltc.neocrypto.io': {'t':'50003', 's':'50004'},
-    'electrum-ltc.petrkr.net': {'t':'60001', 's':'60002'},
-    'electrum.ltc.xurious.com': DEFAULT_PORTS,
-    'electrum.site2.me': DEFAULT_PORTS,
-    'electrum.snicter.com': DEFAULT_PORTS,
-    'electrum.wikit.me': DEFAULT_PORTS,
-    'ltc-westus.electrum-servers.com': DEFAULT_PORTS,
+    'electrum.stratisproject.com': DEFAULT_PORTS,
 }
 
 NODES_RETRY_INTERVAL = 60
@@ -332,7 +322,7 @@ class Network(util.DaemonThread):
         return value
 
     def dynfee(self, i):
-        from bitcoin import RECOMMENDED_FEE
+        from stratis import RECOMMENDED_FEE
         if i < 4:
             j = FEE_TARGETS[i]
             fee = self.fee_estimates.get(j)
@@ -540,7 +530,7 @@ class Network(util.DaemonThread):
                 self.notify('fee')
         elif method == 'blockchain.relayfee':
             if error is None:
-                self.relay_fee = int(result * COIN)
+                self.relay_fee = 5000
                 self.print_error("relayfee", self.relay_fee)
         elif method == 'blockchain.block.get_chunk':
             self.on_get_chunk(interface, response)
@@ -747,7 +737,7 @@ class Network(util.DaemonThread):
                         self.notify('updated')
                     else:
                         interface.print_error("header didn't connect, dismissing interface")
-                        interface.stop()
+                        # interface.stop()
                 else:
                     self.request_header(interface, data, next_height)
 

@@ -5,13 +5,13 @@ import threading
 from binascii import hexlify, unhexlify
 from functools import partial
 
-from electrum_ltc.bitcoin import (bc_address_to_hash_160, xpub_from_pubkey,
+from electrum_stratis.stratis import (bc_address_to_hash_160, xpub_from_pubkey,
                                   public_key_to_bc_address, EncodeBase58Check,
                                   TYPE_ADDRESS, TYPE_SCRIPT)
-from electrum_ltc.i18n import _
-from electrum_ltc.plugins import BasePlugin, hook
-from electrum_ltc.transaction import deserialize, Transaction
-from electrum_ltc.keystore import Hardware_KeyStore, is_xpubkey, parse_xpubkey
+from electrum_stratis.i18n import _
+from electrum_stratis.plugins import BasePlugin, hook
+from electrum_stratis.transaction import deserialize, Transaction
+from electrum_stratis.keystore import Hardware_KeyStore, is_xpubkey, parse_xpubkey
 
 from ..hw_wallet import HW_PluginBase
 
@@ -42,7 +42,7 @@ class TrezorCompatibleKeyStore(Hardware_KeyStore):
         client = self.get_client()
         address_path = self.get_derivation() + "/%d/%d"%sequence
         address_n = client.expand_path(address_path)
-        msg_sig = client.sign_message('Litecoin', address_n, message)
+        msg_sig = client.sign_message('Stratis', address_n, message)
         return msg_sig.signature
 
     def sign_transaction(self, tx, password):
@@ -233,7 +233,7 @@ class TrezorCompatiblePlugin(HW_PluginBase):
         client = self.get_client(keystore)
         inputs = self.tx_inputs(tx, True)
         outputs = self.tx_outputs(keystore.get_derivation(), tx)
-        signed_tx = client.sign_tx('Litecoin', inputs, outputs)[1]
+        signed_tx = client.sign_tx('Stratis', inputs, outputs)[1]
         raw = signed_tx.encode('hex')
         tx.update_signatures(raw)
 
@@ -246,7 +246,7 @@ class TrezorCompatiblePlugin(HW_PluginBase):
         derivation = wallet.keystore.derivation
         address_path = "%s/%d/%d"%(derivation, change, index)
         address_n = client.expand_path(address_path)
-        client.get_address('Litecoin', address_n, True)
+        client.get_address('Stratis', address_n, True)
 
     def tx_inputs(self, tx, for_sig=False):
         inputs = []

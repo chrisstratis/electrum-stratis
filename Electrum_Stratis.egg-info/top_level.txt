@@ -1,0 +1,3 @@
+electrum_stratis
+electrum_stratis_gui
+electrum_stratis_plugins

@@ -27,22 +27,16 @@
 
 import os
 import util
-from bitcoin import *
+from stratis import *
 
-try:
-    from ltc_scrypt import getPoWHash
-except ImportError:
-    util.print_msg("Warning: ltc_scrypt not available, using fallback")
-    from scrypt import scrypt_1024_1_1_80 as getPoWHash
-
-MAX_TARGET = 0x00000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+MAX_TARGET = 0x00000000FFFF0000000000000000000000000000000000000000000000000000
 
 class Blockchain(util.PrintError):
     '''Manages blockchain headers and their verification'''
     def __init__(self, config, network):
         self.config = config
         self.network = network
-        self.headers_url = "https://electrum-ltc.org/blockchain_headers"
+        self.headers_url = "http://stratisplatform.com/blockchain_headers"
         self.local_height = 0
         self.set_local_height()
 
@@ -58,7 +52,7 @@ class Blockchain(util.PrintError):
         prev_hash = self.hash_header(prev_header)
         assert prev_hash == header.get('prev_block_hash'), "prev hash mismatch: %s vs %s" % (prev_hash, header.get('prev_block_hash'))
         assert bits == header.get('bits'), "bits mismatch: %s vs %s" % (bits, header.get('bits'))
-        _hash = self.pow_hash_header(header)
+        _hash = self.hash_header(header)
         assert int('0x' + _hash, 16) <= target, "insufficient proof of work: %s vs target %s" % (int('0x' + _hash, 16), target)
 
     def verify_chain(self, chain):
@@ -106,9 +100,6 @@ class Blockchain(util.PrintError):
         if header is None:
             return '0' * 64
         return hash_encode(Hash(self.serialize_header(header).decode('hex')))
-
-    def pow_hash_header(self, header):
-        return rev_hex(getPoWHash(self.serialize_header(header).decode('hex')).encode('hex'))
 
     def path(self):
         return util.get_headers_path(self.config)
@@ -167,9 +158,9 @@ class Blockchain(util.PrintError):
 
     def get_target(self, index, chain=None):
         if index == 0:
-            return 0x1e0ffff0, 0x00000FFFF0000000000000000000000000000000000000000000000000000000
-        # Litecoin: go back the full period unless it's the first retarget
-        first = self.read_header((index-1) * 2016 - 1 if index > 1 else 0)
+            return 0x1d00ffff, MAX_TARGET
+        # Stratis: go back the full period unless it's the first retarget
+        first = self.read_header((index-1) * 2016)
         last = self.read_header(index*2016 - 1)
         if last is None:
             for h in chain:

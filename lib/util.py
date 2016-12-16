@@ -35,7 +35,7 @@ import urllib
 import threading
 from i18n import _
 
-base_units = {'LTC':8, 'mLTC':5, 'uLTC':2}
+base_units = {'STRAT':8, 'mSTRAT':5, 'uSTRAT':2}
 fee_levels = [_('Within 25 blocks'), _('Within 10 blocks'), _('Within 5 blocks'), _('Within 2 blocks'), _('In the next block')]
 
 def normalize_version(v):
@@ -214,7 +214,7 @@ def android_data_dir():
     return PythonActivity.mActivity.getFilesDir().getPath() + '/data'
 
 def android_headers_path():
-    path = android_ext_dir() + '/org.electrum_ltc.electrum_ltc/blockchain_headers'
+    path = android_ext_dir() + '/com.stratisplatform/blockchain_headers'
     d = os.path.dirname(path)
     if not os.path.exists(d):
         os.mkdir(d)
@@ -224,7 +224,7 @@ def android_check_data_dir():
     """ if needed, move old directory to sandbox """
     ext_dir = android_ext_dir()
     data_dir = android_data_dir()
-    old_electrum_dir = ext_dir + '/electrum-ltc'
+    old_electrum_dir = ext_dir + '/electrum-stratis'
     if not os.path.exists(data_dir) and os.path.exists(old_electrum_dir):
         import shutil
         new_headers_path = android_headers_path()
@@ -244,11 +244,11 @@ def get_headers_path(config):
 
 def user_dir():
     if "HOME" in os.environ:
-        return os.path.join(os.environ["HOME"], ".electrum-ltc")
+        return os.path.join(os.environ["HOME"], ".electrum-stratis")
     elif "APPDATA" in os.environ:
-        return os.path.join(os.environ["APPDATA"], "Electrum-LTC")
+        return os.path.join(os.environ["APPDATA"], "Electrum-Stratis")
     elif "LOCALAPPDATA" in os.environ:
-        return os.path.join(os.environ["LOCALAPPDATA"], "Electrum-LTC")
+        return os.path.join(os.environ["LOCALAPPDATA"], "Electrum-Stratis")
     elif 'ANDROID_DATA' in os.environ:
         return android_check_data_dir()
     else:
@@ -348,20 +348,12 @@ def time_difference(distance_in_time, include_seconds):
         return "over %d years" % (round(distance_in_minutes / 525600))
 
 block_explorer_info = {
-    'explorer.litecoin.net': ('http://explorer.litecoin.net',
-                        {'tx': 'tx', 'addr': 'address'}),
-    'block-explorer.com': ('https://block-explorer.com',
-                        {'tx': 'tx', 'addr': 'address'}),
-    'Blockr.io': ('https://ltc.blockr.io',
-                        {'tx': 'tx/info', 'addr': 'address/info'}),
-    'SoChain': ('https://chain.so',
-                        {'tx': 'tx/LTC', 'addr': 'address/LTC'}),
-    'system default': ('blockchain:',
-                        {'tx': 'tx', 'addr': 'address'}),
+    'CryptoID.info': ('https://chainz.cryptoid.info/strat/',
+                        {'tx': 'tx.dws?', 'addr': 'address.dws?'})
 }
 
 def block_explorer(config):
-    return config.get('block_explorer', 'explorer.litecoin.net')
+    return config.get('block_explorer', 'CryptoID.info')
 
 def block_explorer_tuple(config):
     return block_explorer_info.get(block_explorer(config))
@@ -374,24 +366,24 @@ def block_explorer_URL(config, kind, item):
     if not kind_str:
         return
     url_parts = [be_tuple[0], kind_str, item]
-    return "/".join(url_parts)
+    return "".join(url_parts)
 
 # URL decode
 #_ud = re.compile('%([0-9a-hA-H]{2})', re.MULTILINE)
 #urldecode = lambda x: _ud.sub(lambda m: chr(int(m.group(1), 16)), x)
 
 def parse_URI(uri, on_pr=None):
-    import bitcoin
-    from bitcoin import COIN
+    import stratis
+    from stratis import COIN
 
     if ':' not in uri:
-        if not bitcoin.is_address(uri):
-            raise BaseException("Not a litecoin address")
+        if not stratis.is_address(uri):
+            raise BaseException("Not a stratis address")
         return {'address': uri}
 
     u = urlparse.urlparse(uri)
-    if u.scheme != 'litecoin':
-        raise BaseException("Not a litecoin URI")
+    if u.scheme != 'stratis':
+        raise BaseException("Not a stratis URI")
     address = u.path
 
     # python for android fails to parse query
@@ -407,8 +399,8 @@ def parse_URI(uri, on_pr=None):
 
     out = {k: v[0] for k, v in pq.items()}
     if address:
-        if not bitcoin.is_address(address):
-            raise BaseException("Invalid litecoin address:" + address)
+        if not stratis.is_address(address):
+            raise BaseException("Invalid stratis address:" + address)
         out['address'] = address
     if 'amount' in out:
         am = out['amount']
@@ -427,7 +419,7 @@ def parse_URI(uri, on_pr=None):
     if 'exp' in out:
         out['exp'] = int(out['exp'])
     if 'sig' in out:
-        out['sig'] = bitcoin.base_decode(out['sig'], None, base=58).encode('hex')
+        out['sig'] = stratis.base_decode(out['sig'], None, base=58).encode('hex')
 
     r = out.get('r')
     sig = out.get('sig')
@@ -449,8 +441,8 @@ def parse_URI(uri, on_pr=None):
 
 
 def create_URI(addr, amount, message):
-    import bitcoin
-    if not bitcoin.is_address(addr):
+    import stratis
+    if not stratis.is_address(addr):
         return ""
     query = []
     if amount:
@@ -459,7 +451,7 @@ def create_URI(addr, amount, message):
         if type(message) == unicode:
             message = message.encode('utf8')
         query.append('message=%s'%urllib.quote(message))
-    p = urlparse.ParseResult(scheme='litecoin', netloc='', path=addr, params='', query='&'.join(query), fragment='')
+    p = urlparse.ParseResult(scheme='stratis', netloc='', path=addr, params='', query='&'.join(query), fragment='')
     return urlparse.urlunparse(p)
 
 

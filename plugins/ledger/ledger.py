@@ -5,13 +5,13 @@ import time
 import sys
 import traceback
 
-import electrum_ltc as electrum
-from electrum_ltc.bitcoin import EncodeBase58Check, DecodeBase58Check, bc_address_to_hash_160, hash_160_to_bc_address, TYPE_ADDRESS, int_to_hex, var_int
-from electrum_ltc.i18n import _
-from electrum_ltc.plugins import BasePlugin, hook
-from electrum_ltc.keystore import Hardware_KeyStore, parse_xpubkey
+import electrum_stratis as electrum
+from electrum_stratis.stratis import EncodeBase58Check, DecodeBase58Check, bc_address_to_hash_160, hash_160_to_bc_address, TYPE_ADDRESS, int_to_hex, var_int
+from electrum_stratis.i18n import _
+from electrum_stratis.plugins import BasePlugin, hook
+from electrum_stratis.keystore import Hardware_KeyStore, parse_xpubkey
 from ..hw_wallet import HW_PluginBase
-from electrum_ltc.util import format_satoshis_plain, print_error
+from electrum_stratis.util import format_satoshis_plain, print_error
 
 
 def setAlternateCoinVersions(self, regular, p2sh):

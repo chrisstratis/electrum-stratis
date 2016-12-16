@@ -29,7 +29,7 @@ from qrtextedit import ScanQRTextEdit
 
 import re
 from decimal import Decimal
-from electrum_ltc import bitcoin
+from electrum_stratis import stratis
 
 import util
 
@@ -81,13 +81,13 @@ class PayToEdit(ScanQRTextEdit):
     def parse_output(self, x):
         try:
             address = self.parse_address(x)
-            return bitcoin.TYPE_ADDRESS, address
+            return stratis.TYPE_ADDRESS, address
         except:
             script = self.parse_script(x)
-            return bitcoin.TYPE_SCRIPT, script
+            return stratis.TYPE_SCRIPT, script
 
     def parse_script(self, x):
-        from electrum_ltc.transaction import opcodes, push_script
+        from electrum_stratis.transaction import opcodes, push_script
         script = ''
         for word in x.split():
             if word[0:3] == 'OP_':
@@ -105,7 +105,7 @@ class PayToEdit(ScanQRTextEdit):
         r = line.strip()
         m = re.match('^'+RE_ALIAS+'$', r)
         address = str(m.group(2) if m else r)
-        assert bitcoin.is_address(address)
+        assert stratis.is_address(address)
         return address
 
     def check_text(self):
@@ -119,7 +119,7 @@ class PayToEdit(ScanQRTextEdit):
         self.payto_address = None
         if len(lines) == 1:
             data = lines[0]
-            if data.startswith("litecoin:"):
+            if data.startswith("stratis:"):
                 self.scan_f(data)
                 return
             try:
@@ -247,7 +247,7 @@ class PayToEdit(ScanQRTextEdit):
 
     def qr_input(self):
         data = super(PayToEdit,self).qr_input()
-        if data.startswith("litecoin:"):
+        if data.startswith("stratis:"):
             self.scan_f(data)
             # TODO: update fee
 

@@ -25,7 +25,7 @@
 
 
 from util import ThreadJob
-from bitcoin import *
+from stratis import *
 
 
 class SPV(ThreadJob):
