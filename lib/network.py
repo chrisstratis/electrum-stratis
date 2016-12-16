@@ -530,7 +530,7 @@ class Network(util.DaemonThread):
                 self.notify('fee')
         elif method == 'blockchain.relayfee':
             if error is None:
-                self.relay_fee = 5000
+                self.relay_fee = int(result * COIN)
                 self.print_error("relayfee", self.relay_fee)
         elif method == 'blockchain.block.get_chunk':
             self.on_get_chunk(interface, response)
@@ -737,7 +737,7 @@ class Network(util.DaemonThread):
                         self.notify('updated')
                     else:
                         interface.print_error("header didn't connect, dismissing interface")
-                        # interface.stop()
+                        interface.stop()
                 else:
                     self.request_header(interface, data, next_height)
 

@@ -55,26 +55,54 @@ class Blockchain(util.PrintError):
         _hash = self.hash_header(header)
         assert int('0x' + _hash, 16) <= target, "insufficient proof of work: %s vs target %s" % (int('0x' + _hash, 16), target)
 
+    # def verify_chain(self, chain):
+    #     first_header = chain[0]
+    #     prev_header = self.read_header(first_header.get('block_height') - 1)
+    #     for header in chain:
+    #         height = header.get('block_height')
+    #         bits, target = self.get_target(height / 2016, chain)
+    #         self.verify_header(header, prev_header, bits, target)
+    #         prev_header = header
     def verify_chain(self, chain):
         first_header = chain[0]
         prev_header = self.read_header(first_header.get('block_height') - 1)
         for header in chain:
             height = header.get('block_height')
-            bits, target = self.get_target(height / 2016, chain)
-            self.verify_header(header, prev_header, bits, target)
+            prev_hash = self.hash_header(prev_header)
+            _hash = self.hash_header(header)
+            assert prev_hash == header.get('prev_block_hash')
             prev_header = header
+
 
     def verify_chunk(self, index, data):
         num = len(data) / 80
         prev_header = None
-        if index != 0:
+        if index == 0:
+            previous_hash = ("0"*64)
+        else:
             prev_header = self.read_header(index*2016 - 1)
-        bits, target = self.get_target(index)
+            if prev_header is None: raise
+            previous_hash = self.hash_header(prev_header)
         for i in range(num):
-            raw_header = data[i*80:(i+1) * 80]
+            height = index*2016 + i
+            raw_header = data[i*80:(i+1)*80]
             header = self.deserialize_header(raw_header)
-            self.verify_header(header, prev_header, bits, target)
-            prev_header = header
+            _hash = self.hash_header(header)
+            assert previous_hash == header.get('prev_block_hash')
+            previous_header = header
+            previous_hash = _hash
+
+    # def verify_chunk(self, index, data):
+    #     num = len(data) / 80
+    #     prev_header = None
+    #     if index != 0:
+    #         prev_header = self.read_header(index*2016 - 1)
+    #     bits, target = self.get_target(index)
+    #     for i in range(num):
+    #         raw_header = data[i*80:(i+1) * 80]
+    #         header = self.deserialize_header(raw_header)
+    #         self.verify_header(header, prev_header, bits, target)
+    #         prev_header = header
 
     def serialize_header(self, res):
         s = int_to_hex(res.get('version'), 4) \
@@ -170,13 +198,13 @@ class Blockchain(util.PrintError):
         # bits to target
         bits = last.get('bits')
         bitsN = (bits >> 24) & 0xff
-        assert bitsN >= 0x03 and bitsN <= 0x1e, "First part of bits should be in [0x03, 0x1e]"
+        assert bitsN >= 0x03 and bitsN <= 0x1d, "First part of bits should be in [0x03, 0x1d]"
         bitsBase = bits & 0xffffff
         assert bitsBase >= 0x8000 and bitsBase <= 0x7fffff, "Second part of bits should be in [0x8000, 0x7fffff]"
         target = bitsBase << (8 * (bitsN-3))
         # new target
         nActualTimespan = last.get('timestamp') - first.get('timestamp')
-        nTargetTimespan = 84 * 60 * 60
+        nTargetTimespan = 14 * 24 * 60 * 60
         nActualTimespan = max(nActualTimespan, nTargetTimespan / 4)
         nActualTimespan = min(nActualTimespan, nTargetTimespan * 4)
         new_target = min(MAX_TARGET, (target*nActualTimespan) / nTargetTimespan)

@@ -78,9 +78,8 @@ setup(
     scripts=['electrum-stratis'],
     data_files=data_files,
     description="Lightweight Stratis Wallet",
-    author="Thomas Voegtlin",
-    author_email="thomasv@electrum.org",
+    author="dev0tion",
     license="MIT Licence",
-    url="http://electrum-stratis.org",
+    url="http://www.stratisplatform.com",
     long_description="""Lightweight Stratis Wallet"""
 )
