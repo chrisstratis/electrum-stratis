@@ -4,7 +4,7 @@
 # copy this file to /etc/electrum-stratis.conf if you want read-only settings
 
 [client]
-server = electrum.stratisplatform.com:50001:t
+server = electrum.stratisplatform.com:50002:t
 proxy = None
 gap_limit = 5
 # booleans use python syntax
